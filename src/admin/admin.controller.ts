@@ -1,4 +1,4 @@
-import { Controller,Body,Get, Param,Query, Patch } from '@nestjs/common';
+import { Controller,Body,Get, Param,Query, Patch ,Post} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ParseIntPipe } from '@nestjs/common';
 import { CreateSellerDto } from './admin.dto';
@@ -17,7 +17,7 @@ export class AdminController {
         return this.adminService.deleteSeller(sid);
     }
 
-    @Patch("add-seller")
+    @Post("add-seller")
     addSeller(@Body() seller :CreateSellerDto ): Promise<string>{
         return this.adminService.addSeller(seller);
     }

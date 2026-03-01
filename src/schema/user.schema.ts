@@ -25,13 +25,13 @@ export class user  extends Document{
   @Prop({default:true})
   is_active : boolean;
 
-  @Prop({isRequired:false})
+  @Prop({isRequired:true})
   city: string;
 
-  @Prop({isRequired:false})
+  @Prop({isRequired:true})
   state: string;
 
-  @Prop({isRequired:false})
+  @Prop({isRequired:true})
   zip_code: number;
 }
 

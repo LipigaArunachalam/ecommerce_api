@@ -5,6 +5,10 @@ export class CreateSellerDto{
     @IsString()
     user_id : string;
 
+    @IsNotEmpty()
+    @IsString()
+    password: string;
+
     @IsNumber()
     zip_code: number;
 

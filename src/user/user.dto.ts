@@ -10,6 +10,12 @@ export class CreateUserDto{
     password : string;
     @IsString()
     role : string;
+    @IsString()
+    zip_code : number;
+    @IsString()
+    city : string;
+    @IsString()
+    state : string;
 }
 
 export class VerifyUserDto{
