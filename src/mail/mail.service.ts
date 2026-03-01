@@ -21,8 +21,8 @@ export class MailService {
       to,
       subject: 'Your Seller Account Created',
       html: `
-        <h2>Welcome to Our Platform 🎉</h2>
-        <p>Your seller account has been created.</p>
+        <h2>Welcome</h2>
+        <p>Seller account has been created.</p>
 
         <b>Login Credentials:</b>
         <ul>
@@ -30,8 +30,6 @@ export class MailService {
           <li>Username: ${username}</li>
           <li>Password: ${password}</li>
         </ul>
-
-        <p>Please change your password after first login.</p>
       `,
     });
   }
