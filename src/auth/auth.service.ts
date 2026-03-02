@@ -16,21 +16,12 @@ export class AuthService {
         @InjectModel(user.name) private userModel: Model<user>,
         private jwtService: JwtService,
         private configService: ConfigService,
-        private mailService: MailService
-    ) { }
+        private mailService: MailService) {}
 
     async signUp(signupDto: CreateUserDto) {
         const { username, email, password, role } = signupDto;
-
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        const user = await this.userModel.create({
-            username,
-            email,
-            password: hashedPassword,
-            role
-        });
-
+        const user = await this.userModel.create({username,email,password: hashedPassword,role});
         await user.save();
         const { accessToken, refreshToken } = await this.getTokens(user.role, user.email);
         await this.userModel.findByIdAndUpdate(user._id.toString(), {
@@ -42,9 +33,7 @@ export class AuthService {
 
     async login(loginDto: VerifyUserDto) {
         const { email, password } = loginDto;
-        const user = await this.userModel.findOne({
-            email,
-        });
+        const user = await this.userModel.findOne({email });
 
         if (!user) throw new UnauthorizedException('invalid email or password');
 
@@ -59,14 +48,12 @@ export class AuthService {
 
     async logout(userId: string) {
         await this.userModel.findByIdAndUpdate(userId, {
-            refreshToken: null,
+            refreshToken: null, is_active: false,
         });
     }
 
     async refreshTokens(email: string, refreshToken: string) {
         const user = await this.userModel.findOne({ email });
-        console.log(user);
-        console.log(refreshToken);
         if (!user || !user.refresh_token) {
             throw new UnauthorizedException('Access denied');
         }
@@ -74,7 +61,6 @@ export class AuthService {
         if (user.refresh_token !== refreshToken) {
             throw new UnauthorizedException('Access denied');
         }
-
 
         const tokens = await this.getTokens(user.role, user.email);
         await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken });
@@ -86,7 +72,7 @@ export class AuthService {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(
                 { role, email },
-                { secret: this.configService.get('JWT_SECRET'), expiresIn: '2m' },
+                { secret: this.configService.get('JWT_SECRET'), expiresIn: '3m' },
             ),
             this.jwtService.signAsync(
                 { role, email },
@@ -115,25 +101,16 @@ export class AuthService {
     }
 
     async resetPassword(email: string,token: string,newPassword: string) {
-        const user = await this.userModel
-            .findOne({ email })
-            .select('+passResetToken');
+        const user = await this.userModel.findOne({ email }).select('+passResetToken');
         if (!user || !user.passResetToken || !user.passResetExpires || user.passResetExpires < new Date()) {
             throw new UnauthorizedException('Invalid or expired token');
         }
-        const isMatch = await bcrypt.compare(
-            token,
-            user.passResetToken,
-        );
+        const isMatch = await bcrypt.compare(token,user.passResetToken,);
         if (!isMatch) {
             throw new UnauthorizedException('Invalid or expired token');
         }
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await this.userModel.findByIdAndUpdate(user._id, {
-            password: hashedPassword,
-            passResetToken: null,
-            passResetExpires: null,
-        });
+        await this.userModel.findByIdAndUpdate(user._id, {password: hashedPassword, passResetToken: null,passResetExpires: null,});
         return { message: 'Password reset successful' };
     }
 }
