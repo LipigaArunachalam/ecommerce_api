@@ -17,7 +17,7 @@ export class AuthController {
             sameSite: 'lax',
             maxAge: 3 * 60 * 1000,
         });
-        return { message: 'User registered successfully' , refresh_token : refreshToken};
+        return { message: 'User registered successfully', refresh_token: refreshToken };
     }
 
     @Post('login')
@@ -30,7 +30,7 @@ export class AuthController {
             sameSite: 'lax',
             maxAge: 3 * 60 * 1000,
         });
-        return { message: 'User logged in successfully' , refresh_token : refreshToken};
+        return { message: 'User logged in successfully', refresh_token: refreshToken };
     }
 
     @Post('logout')
@@ -44,4 +44,14 @@ export class AuthController {
         @Body('email') email: string, @Body('refreshToken') refreshToken: string,) {
         return this.authService.refreshTokens(email, refreshToken);
     }
+
+    @Post('forgot-password')
+    async forgot(@Body('email') email: string) {
+        return this.authService.forgotPassword(email);
+    }
+
+    @Post('reset-password')
+    async reset(@Body('email') email: string,@Body('token') token: string,@Body('newPassword') newPassword: string) {
+       return this.authService.resetPassword(email,token,newPassword);
+   }
 }

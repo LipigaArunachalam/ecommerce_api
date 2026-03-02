@@ -7,6 +7,8 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config/dist/config.service';
 import { UnauthorizedException } from '@nestjs/common';
+import * as crypto from 'crypto';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +16,7 @@ export class AuthService {
         @InjectModel(user.name) private userModel: Model<user>,
         private jwtService: JwtService,
         private configService: ConfigService,
+        private mailService: MailService
     ) { }
 
     async signUp(signupDto: CreateUserDto) {
@@ -50,7 +53,7 @@ export class AuthService {
             throw new UnauthorizedException('invalid email or password');
 
         const { accessToken, refreshToken } = await this.getTokens(user.role, user.email);
-         await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken});
+        await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken });
         return { accessToken, refreshToken };
     }
 
@@ -68,13 +71,13 @@ export class AuthService {
             throw new UnauthorizedException('Access denied');
         }
 
-        if(user.refresh_token !== refreshToken){
+        if (user.refresh_token !== refreshToken) {
             throw new UnauthorizedException('Access denied');
         }
 
 
         const tokens = await this.getTokens(user.role, user.email);
-         await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken});
+        await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken });
 
         return tokens;
     }
@@ -92,5 +95,45 @@ export class AuthService {
         ]);
 
         return { accessToken, refreshToken };
+    }
+
+    async forgotPassword(email: string) {
+        const user = await this.userModel.findOne({ email });
+        if (!user) {
+            return { message: 'If the email exists, reset link sent' };
+        }
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = await bcrypt.hash(resetToken, 10);
+        const expires = new Date(Date.now() + 15 * 60 * 1000);
+        await this.userModel.findByIdAndUpdate(user._id, {
+            passResetToken: hashedToken,
+            passResetExpires: expires,
+        });
+        const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${email}`;
+        await this.mailService.sendPasswordReset(email, resetLink);
+        return { message: 'If the email exists, reset link sent' };
+    }
+
+    async resetPassword(email: string,token: string,newPassword: string) {
+        const user = await this.userModel
+            .findOne({ email })
+            .select('+passResetToken');
+        if (!user || !user.passResetToken || !user.passResetExpires || user.passResetExpires < new Date()) {
+            throw new UnauthorizedException('Invalid or expired token');
+        }
+        const isMatch = await bcrypt.compare(
+            token,
+            user.passResetToken,
+        );
+        if (!isMatch) {
+            throw new UnauthorizedException('Invalid or expired token');
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await this.userModel.findByIdAndUpdate(user._id, {
+            password: hashedPassword,
+            passResetToken: null,
+            passResetExpires: null,
+        });
+        return { message: 'Password reset successful' };
     }
 }

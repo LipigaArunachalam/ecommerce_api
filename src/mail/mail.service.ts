@@ -3,24 +3,20 @@ import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
-  private transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS, 
-    },
-  });
+    private transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.MAIL_USER,
+            pass: process.env.MAIL_PASS,
+        },
+    });
 
-  async sendSellerCredentials(
-    to: string,
-    username: string,
-    password: string,
-  ) {
-    await this.transporter.sendMail({
-      from: `"Your App" <${process.env.MAIL_USER}>`,
-      to,
-      subject: 'Your Seller Account Created',
-      html: `
+    async sendSellerCredentials(to: string, username: string, password: string) {
+        await this.transporter.sendMail({
+            from: `<${process.env.MAIL_USER}>`,
+            to,
+            subject: 'Your Seller Account Created',
+            html: `
         <h2>Welcome</h2>
         <p>Seller account has been created.</p>
 
@@ -31,6 +27,19 @@ export class MailService {
           <li>Password: ${password}</li>
         </ul>
       `,
-    });
-  }
+        });
+    }
+
+    async sendPasswordReset(to: string, link: string) {
+        await this.transporter.sendMail({
+            to,
+            subject: 'Reset Your Password',
+            html: `
+      <h2>Password Reset</h2>
+      <p>Click the link below to reset your password:</p>
+      <a href="${link}">Reset Password</a>
+      <p>This link expires in 15 minutes.</p>
+    `,
+        });
+    }
 }
