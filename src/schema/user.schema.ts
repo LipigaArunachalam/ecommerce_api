@@ -19,6 +19,9 @@ export class user extends Document {
   @Prop({ default: null })
   refresh_token?: string;
 
+  @Prop({ default: null })
+  refresh_expires?: Date;
+
   @Prop({ default: false, select: false })
   is_deleted: boolean;
 

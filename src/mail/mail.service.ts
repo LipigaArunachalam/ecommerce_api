@@ -13,9 +13,7 @@ export class MailService {
 
     async sendSellerCredentials(to: string, username: string, password: string) {
         await this.transporter.sendMail({
-            from: `<${process.env.MAIL_USER}>`,
-            to,
-            subject: 'Your Seller Account Created',
+            from: `<${process.env.MAIL_USER}>`,to,subject: 'Your Seller Account Created',
             html: `
         <h2>Welcome</h2>
         <p>Seller account has been created.</p>
@@ -31,9 +29,7 @@ export class MailService {
     }
 
     async sendPasswordReset(to: string, link: string) {
-        await this.transporter.sendMail({
-            to,
-            subject: 'Reset Your Password',
+        await this.transporter.sendMail({from: `<${process.env.MAIL_USER}>`,to,subject: 'Reset Your Password',
             html: `
       <h2>Password Reset</h2>
       <p>Click the link below to reset your password:</p>

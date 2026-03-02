@@ -2,8 +2,12 @@ import { Controller,Body,Get, Param,Query, Patch ,Post} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ParseIntPipe } from '@nestjs/common';
 import { CreateSellerDto } from './admin.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/auth.guard';
+
 
 @Controller('admin')
+@UseGuards(JwtAuthGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

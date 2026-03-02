@@ -1,11 +1,12 @@
 import { Controller, Get, Patch, Param,Body,ValidationPipe,Query , Post} from '@nestjs/common';
 import { SellerService } from './seller.service';
-import {user} from './../schema/user.schema';
-import { ParseIntPipe } from '@nestjs/common';
 import{ Product } from 'src/schema/product.schema';
 import{ CreateProductDto, UpdateProductDto } from './seller.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/auth.guard';
 
 @Controller('seller')
+@UseGuards(JwtAuthGuard)
 export class SellerController {
     constructor(private sellerService : SellerService){}
 

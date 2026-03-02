@@ -23,9 +23,12 @@ export class AuthService {
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await this.userModel.create({username,email,password: hashedPassword,role});
         await user.save();
+        await this.userModel.findOneAndUpdate({_id: user._id}, {$set:{user_id: user._id.toString()}});
         const { accessToken, refreshToken } = await this.getTokens(user.role, user.email);
+        const expires = new Date(Date.now() + 15 * 60 * 1000);
         await this.userModel.findByIdAndUpdate(user._id.toString(), {
             refresh_token: refreshToken,
+            refresh_expires: expires,
         });
         //await this.updateRefreshToken(user._id.toString(), refreshToken);
         return { accessToken, refreshToken };
@@ -42,13 +45,14 @@ export class AuthService {
             throw new UnauthorizedException('invalid email or password');
 
         const { accessToken, refreshToken } = await this.getTokens(user.role, user.email);
-        await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken });
+        const expires = new Date(Date.now() + 15 * 60 * 1000);
+        await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken, refresh_expires: expires });
         return { accessToken, refreshToken };
     }
 
     async logout(userId: string) {
         await this.userModel.findByIdAndUpdate(userId, {
-            refreshToken: null, is_active: false,
+            refreshToken: null, is_active: false, refresh_expires: null,
         });
     }
 
@@ -61,10 +65,14 @@ export class AuthService {
         if (user.refresh_token !== refreshToken) {
             throw new UnauthorizedException('Access denied');
         }
-
-        const tokens = await this.getTokens(user.role, user.email);
-        await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken });
-
+        if (user.refresh_expires && user.refresh_expires < new Date()) {
+            await this.userModel.findByIdAndUpdate(user._id, { refresh_token: null, refresh_expires: null });
+            throw new UnauthorizedException('Access denied');
+        }
+        const tokens = await this.jwtService.signAsync( { role: user.role, email: user.email },
+                { secret: this.configService.get('JWT_SECRET'), expiresIn: '3m' },);
+        //await this.userModel.findByIdAndUpdate(user._id, { refresh_token: refreshToken });
+        
         return tokens;
     }
 
@@ -97,7 +105,7 @@ export class AuthService {
         });
         const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${email}`;
         await this.mailService.sendPasswordReset(email, resetLink);
-        return { message: 'If the email exists, reset link sent' };
+        return { message: 'If the email exists, reset link sent' ,token: resetToken};
     }
 
     async resetPassword(email: string,token: string,newPassword: string) {
